@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Airline Operations KPI Dashboard (simulated data)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f8;--card:#fff;--ink:#12212b;--mute:#5b6b76;--line:#d9e1e6;--a:#0b6e7f;--b:#e0a100;--bad:#c2410c;--r:6px;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1a21;--card:#16252e;--ink:#e6eef2;--mute:#93a5b0;--line:#27404d;--a:#4cc3d6;--b:#f2c14e;--bad:#fb923c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1a21;--card:#16252e;--ink:#e6eef2;--mute:#93a5b0;--line:#27404d;--a:#4cc3d6;--b:#f2c14e;--bad:#fb923c;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+main{max-width:1080px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:15px;margin:0 0 12px}
+.sub{color:var(--mute);margin:0 0 20px;max-width:70ch}
+.tag{display:inline-block;border:1px solid var(--b);color:var(--b);border-radius:var(--r);padding:1px 8px;font-size:12px;margin-left:8px;vertical-align:middle}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--a);border-radius:var(--r);padding:12px 14px}
+.kpi b{display:block;font:500 26px "IBM Plex Mono",monospace}.kpi span{color:var(--mute);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;min-width:0}
+.wide{grid-column:1/-1}
+.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:520px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);font-size:14px}
+th{color:var(--mute);font-weight:400}td.n{font-family:"IBM Plex Mono",monospace;text-align:right}th.n{text-align:right}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;min-width:70px}.bar i{display:block;height:100%;background:var(--a)}
+svg{width:100%;height:auto;display:block}svg text{fill:var(--mute);font-size:11px}
+.ins li{margin-bottom:6px}.log td:last-child{font-family:"IBM Plex Mono",monospace;text-align:right}
+</style></head><body><main>
+<h1>Airline Operations KPI Dashboard <span class="tag">Simulated data</span></h1>
+<p class="sub">Network on-time performance, load factor and revenue for 12 months of a fictional airline's flights. Built with Python (cleaning), SQL (KPI logic) and plain JavaScript (charts).</p>
+<section class="kpis" id="kpis"></section>
+<div class="grid">
+<section class="card wide"><h2>On-time performance (OTP) by month, % of operated flights departing within 15 min</h2><div id="monthly"></div></section>
+<section class="card"><h2>Delay causes, share of delayed flights</h2><div id="causes"></div></section>
+<section class="card"><h2>OTP by scheduled departure hour, %</h2><div id="hours"></div></section>
+<section class="card wide"><h2>Route performance</h2><div class="scroll"><table id="routes"></table></div></section>
+<section class="card"><h2>What the data suggests</h2><ul class="ins" id="ins"></ul></section>
+<section class="card"><h2>Data cleaning log</h2><table class="log" id="log"></table></section>
+</div></main>
+<script>
+const D={"kpi": {"flights": 11491.0, "otp_pct": 65.1, "avg_delay_min": 13.2, "load_factor_pct": 81.1, "passenger_revenue_usd_m": 749.19, "cancellation_pct": 2.22}, "monthly": {"month": ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"], "otp_pct": [73.5, 68.2, 69.8, 71.6, 70.6, 69.8, 48.1, 48.1, 67.7, 73.9, 72.5, 47.5], "load_factor_pct": [80.2, 79.8, 79.9, 80.1, 79.9, 80.1, 84.6, 84.3, 79.5, 79.6, 80.3, 85.2]}, "routes": [{"route": "DXB-LHR", "flights": 1399, "otp_pct": 64.6, "avg_delay_min": 13.3, "load_factor_pct": 81.7, "revenue_usd_m": 140.84}, {"route": "DXB-CDG", "flights": 1393, "otp_pct": 65.3, "avg_delay_min": 13.1, "load_factor_pct": 81.3, "revenue_usd_m": 140.28}, {"route": "DXB-SIN", "flights": 1427, "otp_pct": 64.8, "avg_delay_min": 13.2, "load_factor_pct": 80.9, "revenue_usd_m": 127.65}, {"route": "DXB-BKK", "flights": 1447, "otp_pct": 64.3, "avg_delay_min": 13.4, "load_factor_pct": 81.1, "revenue_usd_m": 112.29}, {"route": "DXB-DEL", "flights": 1486, "otp_pct": 64.2, "avg_delay_min": 13.4, "load_factor_pct": 81.0, "revenue_usd_m": 69.33}, {"route": "DXB-BOM", "flights": 1457, "otp_pct": 63.9, "avg_delay_min": 12.8, "load_factor_pct": 80.9, "revenue_usd_m": 64.18}, {"route": "DXB-CAI", "flights": 1403, "otp_pct": 65.2, "avg_delay_min": 13.0, "load_factor_pct": 80.9, "revenue_usd_m": 51.02}, {"route": "DXB-JED", "flights": 1479, "otp_pct": 68.0, "avg_delay_min": 12.9, "load_factor_pct": 81.2, "revenue_usd_m": 43.6}], "causes": [{"delay_cause": "Late inbound aircraft", "delayed_flights": 1045}, {"delay_cause": "Technical", "delayed_flights": 699}, {"delay_cause": "Ground handling", "delayed_flights": 635}, {"delay_cause": "Air traffic control", "delayed_flights": 588}, {"delay_cause": "Weather", "delayed_flights": 578}, {"delay_cause": "Crew", "delayed_flights": 471}], "hours": {"hour": [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23], "otp_pct": [65.8, 74.6, 72.5, 72.8, 72.3, 76.1, 76.9, 75.2, 72.2, 72.1, 76.9, 75.4, 42.7, 46.5, 43.5, 44.4, 44.2, 47.7, 44.6]}, "cleaning": [{"step": "Duplicate rows removed", "count": 60}, {"step": "Airport codes standardised to upper case", "count": 90}, {"step": "Operated flights with missing delay removed", "count": 176}, {"step": "Flights with invalid passenger count removed (negative or above seats)", "count": 72}, {"step": "Rows kept", "count": 11752}]};
+const $=id=>document.getElementById(id), f=(n,d=1)=>Number(n).toFixed(d), M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const k=D.kpi;
+$("kpis").innerHTML=[[f(k.otp_pct)+"%","On-time performance"],[f(k.avg_delay_min)+" min","Average departure delay"],[f(k.load_factor_pct)+"%","Load factor"],[f(k.cancellation_pct,2)+"%","Cancellation rate"],["$"+f(k.passenger_revenue_usd_m,0)+"M","Passenger revenue"],[k.flights.toLocaleString(),"Operated flights"]].map(x=>`<div class="kpi"><b>${x[0]}</b><span>${x[1]}</span></div>`).join("");
+function line(el,xs,ys){const W=700,H=230,p=34,lo=Math.floor(Math.min(...ys)-3),hi=Math.ceil(Math.max(...ys)+3);
+ const X=i=>p+i*(W-p-10)/(xs.length-1),Y=v=>H-24-(v-lo)/(hi-lo)*(H-44);
+ let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly OTP line chart">`;
+ for(let t=lo;t<=hi;t+=Math.max(1,Math.round((hi-lo)/4))) s+=`<line x1="${p}" x2="${W-10}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)"/><text x="4" y="${Y(t)+4}">${t}</text>`;
+ s+=`<polyline fill="none" stroke="var(--a)" stroke-width="2.5" points="${ys.map((v,i)=>X(i)+","+Y(v)).join(" ")}"/>`;
+ ys.forEach((v,i)=>{s+=`<circle cx="${X(i)}" cy="${Y(v)}" r="4" fill="var(--a)"><title>${xs[i]}: ${v}%</title></circle><text x="${X(i)}" y="${H-6}" text-anchor="middle">${xs[i]}</text>`});
+ el.innerHTML=s+"</svg>"}
+line($("monthly"),D.monthly.month.map(m=>M[+m-1]),D.monthly.otp_pct);
+function hbars(el,rows,fmt){const mx=Math.max(...rows.map(r=>r[1]));el.innerHTML=rows.map(r=>`<div style="display:grid;grid-template-columns:150px 1fr 48px;gap:8px;align-items:center;margin:6px 0"><span>${r[0]}</span><div class="bar"><i style="width:${r[1]/mx*100}%"></i></div><span style="text-align:right;font-family:'IBM Plex Mono',monospace">${fmt(r[1])}</span></div>`).join("")}
+const tot=D.causes.reduce((a,c)=>a+c.delayed_flights,0);
+hbars($("causes"),D.causes.map(c=>[c.delay_cause,c.delayed_flights/tot*100]),v=>f(v,0)+"%");
+(function(){const h=D.hours,W=700,H=200,bw=(W-30)/h.hour.length;let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="OTP by hour">`;
+ h.hour.forEach((x,i)=>{const v=h.otp_pct[i],ht=v/100*(H-40);s+=`<rect x="${20+i*bw+2}" y="${H-24-ht}" width="${bw-4}" height="${ht}" fill="${v<60?"var(--bad)":"var(--a)"}"><title>${x}:00 → ${v}%</title></rect><text x="${20+i*bw+bw/2}" y="${H-8}" text-anchor="middle">${x}</text>`});$("hours").innerHTML=s+"</svg>"})();
+$("routes").innerHTML="<tr><th>Route</th><th class='n'>Flights</th><th class='n'>OTP %</th><th class='n'>Avg delay (min)</th><th>Load factor</th><th class='n'>Revenue ($M)</th></tr>"+D.routes.map(r=>`<tr><td>${r.route}</td><td class="n">${r.flights}</td><td class="n">${r.otp_pct}</td><td class="n">${r.avg_delay_min}</td><td><div class="bar"><i style="width:${r.load_factor_pct}%"></i></div></td><td class="n">${r.revenue_usd_m}</td></tr>`).join("");
+const mo=D.monthly,worst=mo.otp_pct.indexOf(Math.min(...mo.otp_pct)),best=mo.otp_pct.indexOf(Math.max(...mo.otp_pct)),hr=D.hours,wh=hr.otp_pct.indexOf(Math.min(...hr.otp_pct)),rt=[...D.routes].sort((a,b)=>a.otp_pct-b.otp_pct)[0],top=D.causes[0];
+$("ins").innerHTML=[`OTP is lowest in ${M[+mo.month[worst]-1]} (${mo.otp_pct[worst]}%) and highest in ${M[+mo.month[best]-1]} (${mo.otp_pct[best]}%).`,`The ${hr.hour[wh]}:00 departure hour has the weakest OTP (${hr.otp_pct[wh]}%); evening departures suffer from knock-on delays.`,`${top.delay_cause} causes the largest share of delays, so it is the first place to look for process fixes.`,`${rt.route} has the lowest route OTP (${rt.otp_pct}%).`,`Data is simulated, so these patterns are built into the generator and show the analysis method, not real airline performance.`].map(t=>`<li>${t}</li>`).join("");
+$("log").innerHTML=D.cleaning.map(c=>`<tr><td>${c.step}</td><td>${c.count.toLocaleString()}</td></tr>`).join("");
+</script></body></html>
